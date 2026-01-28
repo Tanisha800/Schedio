@@ -1,79 +1,102 @@
 import prisma from "../lib/prisma.js";
 
-
 export const createBooking = async (req, res) => {
-    const { startTime, endTime, inviteeName, inviteeEmail } = req.body;
-    const userId = req.user;
-    console.log(userId)
+    try {
+        const { startTime, endTime, inviteeName, inviteeEmail } = req.body;
+        const userId = req.user;
 
-    // Check availability for that day
-    const dayOfWeek = new Date(startTime).getDay();
-    console.log(dayOfWeek)
+        const bookingStart = new Date(startTime);
+        const bookingEnd = new Date(endTime);
 
-    const availability = await prisma.availability.findFirst({
-        where: {
-            userId,
-            dayOfWeek
-        }
-    });
+        // 1️⃣ Check availability
+        const dayOfWeek = bookingStart.getDay();
 
-    if (!availability) {
-        return res.status(400).json({
-            message: "User is not available on this day"
+        const availability = await prisma.availability.findFirst({
+            where: { userId, dayOfWeek }
         });
-    }
 
-    //Check time is within availability window
-    const bookingStart = new Date(startTime);
-    const bookingEnd = new Date(endTime);
-
-    const [availStartHour, availStartMin] = availability.startTime.split(":");
-    const [availEndHour, availEndMin] = availability.endTime.split(":");
-
-    const availStart = new Date(bookingStart);
-    availStart.setHours(availStartHour, availStartMin);
-
-    const availEnd = new Date(bookingStart);
-    availEnd.setHours(availEndHour, availEndMin);
-
-    if (bookingStart < availStart || bookingEnd > availEnd) {
-        return res.status(400).json({
-            message: "Booking time is outside availability"
-        });
-    }
-
-    // Check for overlapping bookings
-    const conflict = await prisma.booking.findFirst({
-        where: {
-            userId,
-            OR: [
-                {
-                    startTime: { lt: bookingEnd },
-                    endTime: { gt: bookingStart }
-                }
-            ]
+        if (!availability) {
+            return res.status(400).json({ message: "User is not available on this day" });
         }
-    });
 
-    if (conflict) {
-        return res.status(409).json({
-            message: "Time slot already booked"
-        });
-    }
+        // 2️⃣ Check time window
+        const [startH, startM] = availability.startTime.split(":").map(Number);
+        const [endH, endM] = availability.endTime.split(":").map(Number);
 
-    //Create booking
-    const booking = await prisma.booking.create({
-        data: {
-            userId,
-            startTime: bookingStart,
-            endTime: bookingEnd,
-            inviteeName,
-            inviteeEmail
+        const availStart = new Date(bookingStart);
+        availStart.setHours(startH, startM, 0, 0);
+
+        const availEnd = new Date(bookingStart);
+        availEnd.setHours(endH, endM, 0, 0);
+
+        if (bookingStart < availStart || bookingEnd > availEnd) {
+            return res.status(400).json({ message: "Booking time is outside availability" });
         }
-    });
 
-    res.status(201).json({
-        success: true,
-        booking
-    });
+        // 3️⃣ Check conflicts
+        const conflict = await prisma.booking.findFirst({
+            where: {
+                userId,
+                startTime: { lt: bookingEnd },
+                endTime: { gt: bookingStart },
+                status: "booked"
+            }
+        });
+
+        if (conflict) {
+            return res.status(409).json({ message: "Time slot already booked" });
+        }
+
+        // 4️⃣ Create booking
+        const booking = await prisma.booking.create({
+            data: {
+                userId,
+                startTime: bookingStart,
+                endTime: bookingEnd,
+                inviteeName,
+                inviteeEmail,
+                status: "booked"
+            }
+        });
+
+        res.status(201).json({ success: true, booking });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to create booking" });
+    }
+};
+
+
+export const cancelBooking = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1️⃣ Find booking
+        const booking = await prisma.booking.findUnique({
+            where: { id }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // 2️⃣ Ownership check
+        if (booking.userId !== req.user) {
+            return res.status(403).json({ message: "Not authorized to cancel this booking" });
+        }
+
+        // 3️⃣ Soft cancel (do not delete)
+        const cancelledBooking = await prisma.booking.update({
+            where: { id },
+            data: { status: "cancelled" }
+        });
+
+        res.status(200).json({
+            success: true,
+            booking: cancelledBooking
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to cancel booking" });
+    }
 };

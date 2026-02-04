@@ -3,6 +3,24 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 
+export const checkUser = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        return res.status(200).json({
+            exists: !!user
+        });
+
+    } catch (error) {
+        console.error("Check user error:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 // REGISTER
 export const registerUser = async (req, res) => {
     try {

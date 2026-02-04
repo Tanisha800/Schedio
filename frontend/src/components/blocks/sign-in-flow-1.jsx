@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Eye, EyeOff } from "lucide-react";
-import api from "@/lib/api";
+import axiosInstance from "@/lib/axiosInstance";
 
 import * as THREE from "three";
 
@@ -508,25 +508,23 @@ export const SignInPage = ({
     setError("");
 
     try {
-      // Check if user exists by trying to get user info
-      const response = await api.post("/auth/login", { email, password: "check" });
-      // If we reach here, user exists (though password was wrong)
-      setStep("login");
-    } catch (err) {
-      if (err.response?.status === 404) {
-        // User not found, show signup
-        setStep("signup");
-      } else if (err.response?.status === 401) {
-        // User exists but wrong password (our check), go to login
+      const response = await axiosInstance.post("/auth/check", { email });
+
+      if (response.data.exists) {
+        // Existing user → login
         setStep("login");
       } else {
-        // For any network error, default to signup flow
+        // New user → signup
         setStep("signup");
       }
+
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleSignup = async () => {
     if (!email || !name || !password) return;
@@ -535,7 +533,7 @@ export const SignInPage = ({
     setError("");
 
     try {
-      const response = await api.post("/auth/register", {
+      const response = await axiosInstance.post("/auth/register", {
         name,
         email,
         password
@@ -543,7 +541,7 @@ export const SignInPage = ({
 
       if (response.data.success) {
         // Auto-login after successful registration
-        const loginResponse = await api.post("/auth/login", {
+        const loginResponse = await axiosInstance.post("/auth/login", {
           email,
           password
         });
@@ -579,7 +577,7 @@ export const SignInPage = ({
     setError("");
 
     try {
-      const response = await api.post("/auth/login", {
+      const response = await axiosInstance.post("/auth/login", {
         email,
         password
       });

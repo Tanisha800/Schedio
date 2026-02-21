@@ -14,7 +14,7 @@ import EmptyBookingsState from "@/components/bookings/EmptyBookingsState";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axiosInstance";
 
-// ─── Loading fallback ─────────────────────────────────────────────────────────
+
 
 function FullScreenLoading() {
     return (
@@ -27,7 +27,6 @@ function FullScreenLoading() {
     );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function BookingsPage() {
     const router = useRouter();

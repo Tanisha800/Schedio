@@ -16,6 +16,7 @@ app.use(
         origin: [
             "http://localhost:3000",
             "http://localhost:3001",
+            "https://schedio-phi.vercel.app",
             process.env.FRONTEND_URL
         ].filter(Boolean),
         credentials: true

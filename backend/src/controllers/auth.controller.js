@@ -80,6 +80,8 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
+        console.log("Login response sent, setting refresh cookie");
+
         // Generate tokens
         const accessToken = generateAccessToken(user.id);
         const refreshToken = generateRefreshToken(user.id);
@@ -87,10 +89,13 @@ export const loginUser = async (req, res) => {
         // Set refresh token in cookie
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            sameSite: "lax",   // ✅ FIX
+            secure: false,    // ✅ FIX
+            path: "/",        // ✅ FIX
+            maxAge: 7 * 24 * 60 * 60 * 1000
         });
+
+        console.log("Cookies received:", req.cookies);
 
         res.status(200).json({
             success: true,
@@ -133,10 +138,12 @@ export const refreshAccessToken = (req, res) => {
 
 // LOGOUT
 export const logoutUser = (req, res) => {
+    // Cookie clear options MUST exactly match the options used when setting the cookie in loginUser
     res.clearCookie("refreshToken", {
         httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production"
+        sameSite: "lax",
+        secure: false,
+        path: "/"
     });
 
     res.status(200).json({ message: "Logged out successfully" });

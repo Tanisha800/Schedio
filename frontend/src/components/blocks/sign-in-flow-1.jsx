@@ -721,7 +721,7 @@ export const SignInPage = ({
                     className="space-y-6 text-center">
                     <div className="space-y-1">
                       <h1
-                        className="text-[2.5rem] font-bold leading-[1.1] tracking-tight text-white">Welcome Developer</h1>
+                        className="text-[2.5rem] font-bold leading-[1.1] tracking-tight text-white">Welcome to Schedio</h1>
                       <p className="text-[1.8rem] text-white/70 font-light">Your sign in component</p>
                     </div>
 
@@ -885,7 +885,7 @@ export const SignInPage = ({
                         Create Account
                       </h1>
                       <p className="font-readex text-[1.25rem] text-white/50 font-light">
-                        Welcome to Meet Wise, Your Meeting Buddy
+                        Welcome to Schedio, Your Meeting Buddy
                       </p>
                     </div>
 

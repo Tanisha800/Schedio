@@ -1,9 +1,10 @@
 "use client";
 
-import { User, Shield, Sliders, AlertTriangle } from "lucide-react";
+import { User, Shield, Sliders, AlertTriangle, Link2 } from "lucide-react";
 
 const SETTINGS_TABS = [
     { id: "profile", label: "Profile", icon: User },
+    { id: "account", label: "Account URL", icon: Link2 },
     { id: "preferences", label: "Preferences", icon: Sliders },
     { id: "security", label: "Security", icon: Shield },
     { id: "danger", label: "Danger Zone", icon: AlertTriangle, isDestructive: true },
